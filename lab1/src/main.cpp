@@ -2,9 +2,13 @@
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
@@ -52,8 +56,12 @@ void tick() {
 }
 
 int main(int argc, char *argv[]) {
-  Object obj("../obj/tetrahedron.obj");
-  obj.printInfo();
+  if (argc < 2) {
+    std::cerr << "Must pass path to obj as argument!" << std::endl;
+    exit(1);
+  }
+  Object obj(argv[1]);
+  // obj.printInfo();
 
   SDL_Window *window = NULL;
 
@@ -96,16 +104,10 @@ int main(int argc, char *argv[]) {
   glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
   SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
-  for (const auto& vert : obj.attrib.vertices) {
-    std::cout << vert << " ";
-  }
-  std::cout << std::endl;
-
   std::vector<unsigned> indices;
 
   for (const auto& shape : obj.shapes) {
     for (const auto& i : shape.mesh.indices) {
-      std::cout << i.vertex_index << " ";
       indices.push_back(i.vertex_index);
     }
     std::cout << std::endl;
@@ -149,6 +151,7 @@ unsigned int indices2[] = {  // note that we start from 0!
   glm::mat4 view;
   glm::mat4 projection;
   projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
+  glm::mat4 model = glm::scale(glm::vec3(4.0f, 4.0f, 4.0f));
 
   glm::mat4 MVP;
 
@@ -171,12 +174,12 @@ unsigned int indices2[] = {  // note that we start from 0!
 
     tick();
 
-    const unsigned period = 3000;
+    const unsigned period = 300000;
     unsigned ticks = SDL_GetTicks() % period;
-    view = glm::lookAt(glm::vec3(std::sin(ticks/(float)period*4*3.14f)*5.f, std::cos(ticks/(float)period*4*3.14f), 10.0f),
+    view = glm::lookAt(glm::vec3(3.f, 3.f, 3.f),//glm::vec3(std::sin(ticks/(float)period*4*3.14f)*5.f, std::cos(ticks/(float)period*4*3.14f), 15.0f),
 		       glm::vec3(0.0f, 0.0f, 0.0f),
 		       glm::vec3(0.0f, 1.0f, 0.0f));
-    MVP = projection * view;
+    MVP = projection * view * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.f, 1.f, 0.f)) * model;
 
     GLenum err;
     while((err = glGetError()) != GL_NO_ERROR)
@@ -188,12 +191,12 @@ unsigned int indices2[] = {  // note that we start from 0!
     shader.use();
     glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     SDL_GL_SwapWindow(window);
 
-    SDL_Delay(10);
+    //SDL_Delay(1);
   }
 
   SDL_GL_DeleteContext(gl_context);
