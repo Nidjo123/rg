@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   Object obj(argv[1]);
-  // obj.printInfo();
+  obj.printInfo();
 
   SDL_Window *window = NULL;
 

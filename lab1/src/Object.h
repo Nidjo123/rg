@@ -15,7 +15,7 @@ public:
   std::vector<tinyobj::material_t> materials;
 
 private:
-  void calculateNormals();
+  void calculateVertexNormals();
 
   std::string path;
 };

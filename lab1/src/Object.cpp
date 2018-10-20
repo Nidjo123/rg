@@ -21,7 +21,88 @@ Object::Object(const char *path, const char *base_path) : path(path) {
     std::cout << "MORE THAN 1 SHAPE!" << std::endl;
   }
 
+  calculateVertexNormals();
+
   std::cout << "Successfully loaded " << path << "!" << std::endl;
+}
+
+void Object::calculateVertexNormals() {
+  attrib.normals = std::vector<tinyobj::real_t>(attrib.vertices.size(), 0.0f);
+
+  for (size_t i = 0; i < shapes.size(); i++) {
+    float nx, ny, nz = 0.0f; // normal for current triangle
+    float vx1, vx2, vx3 = 0.f; // vertex 1
+    float vy1, vy2, vy3 = 0.f; // vertex 2
+    float vz1, vz2, vz3 = 0.f; // vertex 3
+
+    const tinyobj::shape_t& shape = shapes[i];
+    std::vector<int> fv_indices;
+    const unsigned char num_face_vertices = 3;
+    for (size_t v = 0; v < shape.mesh.indices.size(); v++) {
+      const int vi = shape.mesh.indices[v].vertex_index;
+
+      fv_indices.push_back(vi);
+
+      float x = attrib.vertices[num_face_vertices*vi];
+      float y = attrib.vertices[num_face_vertices*vi+1];
+      float z = attrib.vertices[num_face_vertices*vi+2];
+      switch(v % 3) {
+      case 0:
+	// Defining first point in triangle
+	vx1 = x;
+	vy1 = y;
+	vz1 = z;
+	break;
+      case 1:
+	// Defining second point in triangle
+	vx2 = x;
+	vy2 = y;
+	vz2 = z;
+	break;
+      case 2:
+	// Defining third point in a triangle
+	vx3 = x;
+	vy3 = y;
+	vz3 = z;
+	float qx, qy, qz, px, py, pz;
+	// Calculate q vector
+	qx = vx2 - vx1;
+	qy = vy2 - vy1;
+	qz = vz2 - vz1;
+	// Calculate p vector
+	px = vx3 - vx1;
+	py = vy3 - vy1;
+	pz = vz3 - vz1;
+	// Calculate normal
+	nx = py * qz - pz * qy;
+	ny = pz * qx - px * qz;
+	nz = px * qy - py * qx;
+	for (auto vi : fv_indices) {
+	  // add normal to index
+	  attrib.normals[num_face_vertices*vi] += nx;
+	  attrib.normals[num_face_vertices*vi+1] += ny;
+	  attrib.normals[num_face_vertices*vi+2] += nz;
+	}
+	fv_indices.clear();
+	break;
+      }
+    }
+  }
+
+  // normalize normals :)
+  for (int vi = 0; vi < attrib.vertices.size() / 3; vi++) {
+    float x = attrib.normals[3*vi];
+    float y = attrib.normals[3*vi+1];
+    float z = attrib.normals[3*vi+2];
+
+    const float len = sqrt(x*x + y*y + z*z);
+
+    if (len > 0.0f) {
+      attrib.normals[3*vi] /= len;
+      attrib.normals[3*vi+1] /= len;
+      attrib.normals[3*vi+2] /= len;
+    }
+  }
 }
 
 static void CalcNormal(float N[3], float v0[3], float v1[3], float v2[3]) {
