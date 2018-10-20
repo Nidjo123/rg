@@ -20,11 +20,11 @@ public:
   void setInt(const std::string &name, int value) const;
   void setFloat(const std::string &name, float value) const;
 
+  unsigned int id;
+
 private:
   unsigned int compileShader(const char *source, GLenum shader_type);
   void linkProgram(unsigned vertex, unsigned fragment);
-
-  unsigned int id;
 };
 
 #endif

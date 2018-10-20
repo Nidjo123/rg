@@ -2,20 +2,28 @@
 
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <cmath>
 #include <string>
 #include <vector>
 
-#define TINYOBJLOADER_IMPLEMENTATION // define this in only *one* .cc
-#include "tiny_obj_loader.h"
+#include "Object.h"
+#include "Shader.h"
 
 #define DEBUG 1
 
 static const char *NAME = "RG -- B-Spline";
 static const int WIDTH = 800;
 static const int HEIGHT = 600;
+
+unsigned int VBO;
+unsigned int VAO;
+unsigned int EBO;
 
 void print_debug_info() {
   SDL_version compiled;
@@ -34,31 +42,18 @@ void print_debug_info() {
   SDL_Log("RAM: %d MB\n", SDL_GetSystemRAM());
 }
 
+void render() {
+  glClearColor(0.3f, 0.3f, 0.7f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void tick() {
+
+}
+
 int main(int argc, char *argv[]) {
-  std::string inputfile = "obj/frog.obj";
-  tinyobj::attrib_t attrib;
-  std::vector<tinyobj::shape_t> shapes;
-  std::vector<tinyobj::material_t> materials;
-
-  std::string err;
-  std::string warn;
-  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "../obj/ArabianCity.obj", "../obj");
-
-  if (!warn.empty()) {
-    std::cout << warn << std::endl;
-  }
-
-  if (!err.empty()) { // `err` may contain warning message.
-    std::cerr << err << std::endl;
-  }
-
-  if (!ret) {
-    exit(1);
-  }
-
-  std::cout << "Successfully loaded " << inputfile << "!\n";
-
-
+  Object obj("../obj/tetrahedron.obj");
+  obj.printInfo();
 
   SDL_Window *window = NULL;
 
@@ -97,6 +92,67 @@ int main(int argc, char *argv[]) {
   }
 
   SDL_Log("OpenGL version: %s\n", glGetString(GL_VERSION));
+  int nrAttributes;
+  glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+  SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
+
+  for (const auto& vert : obj.attrib.vertices) {
+    std::cout << vert << " ";
+  }
+  std::cout << std::endl;
+
+  std::vector<unsigned> indices;
+
+  for (const auto& shape : obj.shapes) {
+    for (const auto& i : shape.mesh.indices) {
+      std::cout << i.vertex_index << " ";
+      indices.push_back(i.vertex_index);
+    }
+    std::cout << std::endl;
+  }
+
+  float vertices[] = {
+     0.5f,  0.5f, 0.0f,  // top right
+     0.5f, -0.5f, 0.0f,  // bottom right
+    -0.5f, -0.5f, 0.0f,  // bottom left
+    -0.5f,  0.5f, 0.0f   // top left
+};
+unsigned int indices2[] = {  // note that we start from 0!
+    0, 1, 3,   // first triangle
+    1, 2, 3    // second triangle
+};
+
+  Shader shader("shader.vert", "shader.frag");
+  glViewport(0, 0, WIDTH, HEIGHT);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+
+  glCullFace(GL_FRONT);
+
+  glGenVertexArrays(1, &VAO);
+  glGenBuffers(1, &VBO);
+  glGenBuffers(1, &EBO);
+
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(obj.attrib.vertices[0])*obj.attrib.vertices.size(), &obj.attrib.vertices[0], GL_STATIC_DRAW);
+  //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
+  //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glBindVertexArray(0);
+
+  glm::mat4 view;
+  glm::mat4 projection;
+  projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
+
+  glm::mat4 MVP;
+
+  GLint locationID = glGetUniformLocation(shader.id, "MVP");
 
   int running = 1;
   while (running) {
@@ -106,29 +162,38 @@ int main(int argc, char *argv[]) {
       case SDL_QUIT:
 	running = 0;
 	break;
+      case SDL_WINDOWEVENT_RESIZED:
+      case SDL_WINDOWEVENT_SIZE_CHANGED:
+	glViewport(0, 0, event.window.data1, event.window.data2);
+	break;
       }
     }
 
-    glClearColor(0.2f, 0.2f, 0.7f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
+    tick();
+
+    const unsigned period = 3000;
+    unsigned ticks = SDL_GetTicks() % period;
+    view = glm::lookAt(glm::vec3(std::sin(ticks/(float)period*4*3.14f)*5.f, std::cos(ticks/(float)period*4*3.14f), 10.0f),
+		       glm::vec3(0.0f, 0.0f, 0.0f),
+		       glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP = projection * view;
+
+    GLenum err;
+    while((err = glGetError()) != GL_NO_ERROR)
+      {
+	printf("OpenGL Error: %x\n", err);
+      }
+
+    render();
+    shader.use();
+    glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
+    glBindVertexArray(VAO);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 
     SDL_GL_SwapWindow(window);
 
-    SDL_Delay(300);
-
-    glClearColor(0.7f, 0.2f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    SDL_GL_SwapWindow(window);
-
-    SDL_Delay(300);
-
-    glClearColor(0.2f, 0.8f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    SDL_GL_SwapWindow(window);
-
-    SDL_Delay(300);
+    SDL_Delay(10);
   }
 
   SDL_GL_DeleteContext(gl_context);

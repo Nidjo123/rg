@@ -82,6 +82,8 @@ void Shader::linkProgram(unsigned vertex, unsigned fragment) {
   // we don't need shaders anymore
   glDeleteShader(vertex);
   glDeleteShader(fragment);
+
+  std::cout << "Successfully loaded shaders!" << std::endl;
 }
 
 void Shader::use() const {
