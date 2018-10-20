@@ -1,0 +1,23 @@
+
+GXX=g++
+SDL2_CFLAGS=`sdl2-config --cflags`
+SDL2_LIBS=`sdl2-config --libs`
+GL_LIBS=-lGL
+CFLAGS=$(SDL2_CFLAGS)
+LDFLAGS=$(SDL2_LIBS) $(GL_LIBS)
+
+.PHONY: clean
+
+all: bspline
+
+bspline: main.o tiny_obj_loader.o
+	$(GXX) -o bspline main.o tiny_obj_loader.o $(LDFLAGS)
+
+main.o: main.cpp
+	$(GXX) $(CFLAGS) -c main.cpp
+
+tiny_obj_loader.o: tiny_obj_loader.cc
+	$(GXX) -c tiny_obj_loader.cc $(INC)
+
+clean:
+	rm bspline *.o
