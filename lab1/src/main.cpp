@@ -18,6 +18,7 @@
 
 #include "Object.h"
 #include "Shader.h"
+#include "BSpline.h"
 
 #define DEBUG 1
 
@@ -61,7 +62,13 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   Object obj(argv[1]);
-  obj.printInfo();
+
+  BSpline bspline("points");
+
+  for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
+    glm::vec3 v = bspline.value(0, t);
+    std::cout << v.x << ", " << v.y << ", " << v.z << std::endl;
+  }
 
   SDL_Window *window = NULL;
 
@@ -118,11 +125,11 @@ int main(int argc, char *argv[]) {
      0.5f, -0.5f, 0.0f,  // bottom right
     -0.5f, -0.5f, 0.0f,  // bottom left
     -0.5f,  0.5f, 0.0f   // top left
-};
-unsigned int indices2[] = {  // note that we start from 0!
-    0, 1, 3,   // first triangle
-    1, 2, 3    // second triangle
-};
+  };
+  unsigned int indices2[] = {  // note that we start from 0!
+			     0, 1, 3,   // first triangle
+			     1, 2, 3    // second triangle
+  };
 
   Shader shader("shader.vert", "shader.frag");
   glViewport(0, 0, WIDTH, HEIGHT);

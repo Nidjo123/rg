@@ -1,0 +1,13 @@
+#include "BSpline.h"
+
+#include <fstream>
+
+BSpline::BSpline(const char *path) {
+
+}
+
+  int points() const;
+  int segments() const;
+
+  glm::vec3 value(double t) const;
+  glm::vec3 tangent(double t) const;

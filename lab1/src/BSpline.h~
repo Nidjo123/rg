@@ -1,0 +1,12 @@
+#ifndef BSPLINE_H
+#define BSPLINE_H
+
+#include <glm/glm.hpp>
+
+class BSpline {
+public:
+
+private:
+};
+
+#endif
