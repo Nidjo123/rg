@@ -33,7 +33,7 @@ unsigned int object_EBO;
 Shader shader;
 Shader bspline_shader;
 
-glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 7.f, -10.f),
+glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 15.f, -5.f),
 			     glm::vec3(5.0f, 5.0f, 30.0f),
 			     glm::vec3(0.0f, 1.0f, 0.0f));
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
@@ -41,7 +41,7 @@ glm::mat4 model;
 glm::mat4 MVP;
 glm::mat4 MV;
 
-const int samples_per_segment = 60;
+const int samples_per_segment = 50;
 BSpline bspline("points");
 std::vector<float> bspline_samples(bspline.segments() * samples_per_segment * 3);
 std::vector<float> bspline_tangents(bspline.segments() * samples_per_segment * 3);
@@ -131,7 +131,7 @@ void init() {
 
     obj_data.push_back(cols[i%ncols]);
     obj_data.push_back(cols[i%ncols+1]);
-    obj_data.push_back(cols[i%ncols+1]);
+    obj_data.push_back(cols[i%ncols+2]);
   }
 
   for (const auto& shape : obj.shapes) {
@@ -220,14 +220,9 @@ void render() {
 void tick() {
   // calculate object position on the spline
   const int curr_pt = SDL_GetTicks() / duration % (bspline_samples.size()/3);
-  float dx = bspline_samples[curr_pt*3];
-  float dy = bspline_samples[curr_pt*3+1];
-  float dz = bspline_samples[curr_pt*3+2];
-
-  model = glm::scale(glm::translate(glm::vec3(dx, dy, dz)), glm::vec3(10.f, 10.f, 10.f));
-
-  MVP = projection * view * model;
-  MV = view;
+  const float dx = bspline_samples[curr_pt*3];
+  const float dy = bspline_samples[curr_pt*3+1];
+  const float dz = bspline_samples[curr_pt*3+2];
 
   const glm::vec3 tang(bspline_tangents[curr_pt*3],
 		       bspline_tangents[curr_pt*3+1],
@@ -239,6 +234,19 @@ void tick() {
   tangent[3] = dx + scale*tang[0];
   tangent[4] = dy + scale*tang[1];
   tangent[5] = dz + scale*tang[2];
+
+  const glm::vec3 orientation = glm::vec3(0.0f, 0.0f, 1.0f);
+  const glm::vec3 rot_axis = glm::cross(orientation, tang);
+  const float cos_phi = glm::dot(tang, orientation);
+  const float angle = std::acos(cos_phi);// / M_PI * 180.0f;
+  const glm::mat4 rot = glm::rotate(angle, rot_axis); // documentation is wrong, it's radians, not degrees!!!
+  const glm::mat4 scale_ = glm::scale(glm::vec3(10.f, 10.f, 10.f));
+  const glm::mat4 translate = glm::translate(glm::vec3(dx, dy, dz));
+
+  model = translate * rot * scale_;
+
+  MVP = projection * view * model;
+  MV = view * model;
 }
 
 int main(int argc, char *argv[]) {

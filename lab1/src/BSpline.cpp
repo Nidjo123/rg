@@ -37,7 +37,7 @@ glm::mat3x4 BSpline::makeR(int segment) const {
 }
 
 glm::vec3 BSpline::value(int segment, float t) const {
-  glm::vec4 T3 = glm::vec4(t*t*t, t*t, t, 1.0f);
+  const glm::vec4 T3 = glm::vec4(t*t*t, t*t, t, 1.0f);
   glm::mat4 B3;
   // column-major ordering!
   B3[0][0] = -1.0f;
@@ -57,13 +57,13 @@ glm::vec3 BSpline::value(int segment, float t) const {
   B3[3][2] = 0.0f;
   B3[3][3] = 0.0f;
 
-  glm::mat3x4 R = makeR(segment);
+  const glm::mat3x4 R = makeR(segment);
 
   return T3 / 6.0f * B3 * R;
 }
 
 glm::vec3 BSpline::tangent(int segment, float t) const {
-  glm::vec3 T2 = glm::vec3(t*t, t, 1.0f);
+  const glm::vec3 T2 = glm::vec3(t*t, t, 1.0f);
   glm::mat4x3 B3;
   // column-major ordering!
   B3[0][0] = -1.0f;
@@ -79,7 +79,7 @@ glm::vec3 BSpline::tangent(int segment, float t) const {
   B3[3][1] = 0.0f;
   B3[3][2] = 0.0f;
 
-  glm::mat3x4 R = makeR(segment);
+  const glm::mat3x4 R = makeR(segment);
 
-  return glm::normalize(0.5f * T2 * B3 * R);
+  return glm::normalize(T2 / 2.0f * B3 * R);
 }
