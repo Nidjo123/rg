@@ -63,7 +63,7 @@ void init() {
   glEnable(GL_DEPTH_TEST);
   glEnable(GL_CULL_FACE);
 
-  glCullFace(GL_FRONT);
+  //glCullFace(GL_FRONT);
 
   glGenVertexArrays(1, &object_VAO);
   glGenVertexArrays(1, &bspline_VAO);
@@ -86,7 +86,7 @@ void render() {
   bspline_shader.use();
   glBindVertexArray(bspline_VAO);
   glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
-  glDrawArrays(GL_LINE_STRIP, 0, bspline_samples.size());
+  glDrawArrays(GL_LINE_STRIP, 0, bspline_samples.size() / 3);
   glBindVertexArray(0);
 }
 
@@ -110,13 +110,6 @@ int main(int argc, char *argv[]) {
   if (argc < 2) {
     std::cerr << "Must pass path to obj as argument!" << std::endl;
     exit(1);
-  }
-
-  Object obj(argv[1]);
-
-  for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
-    glm::vec3 v = bspline.value(0, t);
-    std::cout << v.x << ", " << v.y << ", " << v.z << std::endl;
   }
 
   SDL_Window *window = NULL;
@@ -160,6 +153,8 @@ int main(int argc, char *argv[]) {
   glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
   SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
+
+  Object obj(argv[1]);
   std::vector<unsigned> indices;
 
   for (const auto& shape : obj.shapes) {
@@ -202,6 +197,12 @@ int main(int argc, char *argv[]) {
 
   GLint locationID = glGetUniformLocation(shader.id, "MVP");
 
+  int cnt = 0;
+  for (auto x : bspline_samples) {
+    std::cout << x << " ";
+    if ((++cnt) % 3 == 0) std::cout << std::endl;
+  }
+
   int running = 1;
   while (running) {
     SDL_Event event;
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
     view = glm::lookAt(glm::vec3(0.f, 0.f, 30.f),
 		       glm::vec3(0.0f, 0.0f, 0.0f),
 		       glm::vec3(0.0f, 1.0f, 0.0f));
-    MVP = projection * view;// * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.0f, 1.0f, 0.0f));
+    MVP = projection * view * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.0f, 1.0f, 0.0f));
 
     GLenum err;
     while((err = glGetError()) != GL_NO_ERROR) {
@@ -232,12 +233,11 @@ int main(int argc, char *argv[]) {
     }
 
     render();
-    /*
     shader.use();
     glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
     glBindVertexArray(object_VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);*/
+    glBindVertexArray(0);
 
     SDL_GL_SwapWindow(window);
 
