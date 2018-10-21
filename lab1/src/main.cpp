@@ -39,6 +39,7 @@ glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 7.f, -10.f),
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
 glm::mat4 model;
 glm::mat4 MVP;
+glm::mat4 MV;
 
 const int samples_per_segment = 60;
 BSpline bspline("points");
@@ -49,6 +50,7 @@ std::vector<float> tangent(6); // two 3D points
 
 Object obj;
 std::vector<unsigned> indices;
+std::vector<float> obj_data;
 
 const int duration = 20; // ticks
 
@@ -107,15 +109,50 @@ void init() {
     }
   }
 
+  float cols[] = {1.f, 0.f, 0.f,
+		  0.f, 1.f, 0.f,
+		  0.f, 0.f, 1.f,
+		  1.f, 1.f, 0.f,
+		  0.f, 1.f, 1.f,
+		  1.f, 0.f, 1.f,
+		  .5f, .5f, .5f,
+  };
+
+  const size_t ncols = sizeof(cols)/sizeof(cols[0]);
+
+  for (int i = 0; i < obj.attrib.vertices.size() / 3; i++) {
+    obj_data.push_back(obj.attrib.vertices[i*3]);
+    obj_data.push_back(obj.attrib.vertices[i*3+1]);
+    obj_data.push_back(obj.attrib.vertices[i*3+2]);
+
+    obj_data.push_back(obj.attrib.normals[i*3]);
+    obj_data.push_back(obj.attrib.normals[i*3+1]);
+    obj_data.push_back(obj.attrib.normals[i*3+2]);
+
+    obj_data.push_back(cols[i%ncols]);
+    obj_data.push_back(cols[i%ncols+1]);
+    obj_data.push_back(cols[i%ncols+1]);
+  }
+
+  for (const auto& shape : obj.shapes) {
+    for (const auto& i : shape.mesh.indices) {
+      indices.push_back(i.vertex_index);
+    }
+  }
+
   glBindVertexArray(object_VAO);
   glBindBuffer(GL_ARRAY_BUFFER, object_VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(obj.attrib.vertices[0])*obj.attrib.vertices.size(), &obj.attrib.vertices[0], GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(obj_data[0])*obj_data.size(), &obj_data[0], GL_STATIC_DRAW);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object_EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
   glEnableVertexAttribArray(0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(1);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
+  glEnableVertexAttribArray(2);
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(6 * sizeof(float)));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
 
@@ -144,12 +181,14 @@ void render() {
   glClearColor(0.3f, 0.3f, 0.7f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  const GLint locationID = glGetUniformLocation(shader.id, "MVP");
+  const GLint obj_MVP = glGetUniformLocation(shader.id, "MVP");
+  const GLint obj_MV = glGetUniformLocation(shader.id, "MV");
   const GLint bspline_MVP = glGetUniformLocation(bspline_shader.id, "MVP");
   const GLint bspline_col = glGetUniformLocation(bspline_shader.id, "color");
 
   shader.use();
-  glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
+  glUniformMatrix4fv(obj_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
+  glUniformMatrix4fv(obj_MV, 1, GL_FALSE, glm::value_ptr(MV));
   glBindVertexArray(object_VAO);
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
@@ -188,6 +227,7 @@ void tick() {
   model = glm::scale(glm::translate(glm::vec3(dx, dy, dz)), glm::vec3(10.f, 10.f, 10.f));
 
   MVP = projection * view * model;
+  MV = view;
 
   const glm::vec3 tang(bspline_tangents[curr_pt*3],
 		       bspline_tangents[curr_pt*3+1],
@@ -249,13 +289,6 @@ int main(int argc, char *argv[]) {
   SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
   obj.load(argv[1]);
-
-  for (const auto& shape : obj.shapes) {
-    for (const auto& i : shape.mesh.indices) {
-      indices.push_back(i.vertex_index);
-    }
-    std::cout << std::endl;
-  }
 
   init();
 
