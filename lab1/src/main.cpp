@@ -30,7 +30,7 @@ bool key_down[4];
 bool mouse_captured;
 float xoffset;
 float yoffset;
-float cam_yaw = 60.0f;
+float cam_yaw = 65.0f;
 float cam_pitch = -10.0f;
 
 unsigned int object_VBO, bspline_VBO, tangent_VBO;
@@ -40,7 +40,7 @@ unsigned int object_EBO;
 Shader shader;
 Shader bspline_shader;
 
-glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 15.f, -5.f),
+glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 15.f, -10.f),
 			     glm::vec3(5.0f, 5.0f, 30.0f),
 			     glm::vec3(0.0f, 1.0f, 0.0f));
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
@@ -49,7 +49,7 @@ glm::mat4 MVP;
 glm::mat4 MV;
 
 glm::vec3 cameraPos   = glm::vec3(-7.0f, 15.0f,  -10.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 cameraFront = glm::vec3(5.0f, 5.0f, 30.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
 const int samples_per_segment = 50;
@@ -281,13 +281,16 @@ void tick(float t_delta) {
       cam_pitch = 89.0f;
     if (cam_pitch < -89.0f)
       cam_pitch = -89.0f;
-
-    glm::vec3 front;
-    front.x = std::cos(glm::radians(cam_pitch)) * std::cos(glm::radians(cam_yaw));
-    front.y = std::sin(glm::radians(cam_pitch));
-    front.z = std::cos(glm::radians(cam_pitch)) * std::sin(glm::radians(cam_yaw));
-    cameraFront = glm::normalize(front);
+  } else {
+    xoffset = 0.0f;
+    yoffset = 0.0f;
   }
+
+  glm::vec3 front;
+  front.x = std::cos(glm::radians(cam_pitch)) * std::cos(glm::radians(cam_yaw));
+  front.y = std::sin(glm::radians(cam_pitch));
+  front.z = std::cos(glm::radians(cam_pitch)) * std::sin(glm::radians(cam_yaw));
+  cameraFront = glm::normalize(front);
 
   view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
