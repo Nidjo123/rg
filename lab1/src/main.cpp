@@ -26,6 +26,8 @@ static const char *NAME = "RG -- B-Spline";
 static const int WIDTH = 800;
 static const int HEIGHT = 600;
 
+bool key_down[4];
+
 unsigned int object_VBO, bspline_VBO, tangent_VBO;
 unsigned int object_VAO, bspline_VAO, tangent_VAO;
 unsigned int object_EBO;
@@ -40,6 +42,10 @@ glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f
 glm::mat4 model;
 glm::mat4 MVP;
 glm::mat4 MV;
+
+glm::vec3 cameraPos   = glm::vec3(-7.0f, 15.0f,  -10.0f);
+glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, 1.0f);
+glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
 const int samples_per_segment = 50;
 BSpline bspline("points");
@@ -217,7 +223,7 @@ void render() {
   }
 }
 
-void tick() {
+void tick(float t_delta) {
   // calculate object position on the spline
   const int curr_pt = SDL_GetTicks() / duration % (bspline_samples.size()/3);
   const float dx = bspline_samples[curr_pt*3];
@@ -244,6 +250,18 @@ void tick() {
   const glm::mat4 translate = glm::translate(glm::vec3(dx, dy, dz));
 
   model = translate * rot * scale_;
+
+  const float cameraSpeed = 15.0f * t_delta;
+  if (key_down[0]) // W
+    cameraPos += cameraSpeed * cameraFront;
+  if (key_down[2]) // S
+    cameraPos -= cameraSpeed * cameraFront;
+  if (key_down[1]) // A
+    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  if (key_down[3]) // D
+    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+
+  view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
   MVP = projection * view * model;
   MV = view * model;
@@ -300,6 +318,9 @@ int main(int argc, char *argv[]) {
 
   init();
 
+  unsigned last_ticks = 0u;
+
+
   int running = 1;
   while (running) {
     SDL_Event event;
@@ -312,10 +333,35 @@ int main(int argc, char *argv[]) {
       case SDL_WINDOWEVENT_SIZE_CHANGED:
 	glViewport(0, 0, event.window.data1, event.window.data2);
 	break;
+      case SDL_KEYDOWN:
+	if (event.key.keysym.sym == SDLK_w)
+	  key_down[0] = true;
+	if (event.key.keysym.sym == SDLK_s)
+	  key_down[2] = true;
+	if (event.key.keysym.sym == SDLK_a)
+	  key_down[1] = true;
+	if (event.key.keysym.sym == SDLK_d)
+	  key_down[3] = true;
+	break;
+      case SDL_KEYUP:
+	if (event.key.keysym.sym == SDLK_w)
+	  key_down[0] = false;
+	if (event.key.keysym.sym == SDLK_s)
+	  key_down[2] = false;
+	if (event.key.keysym.sym == SDLK_a)
+	  key_down[1] = false;
+	if (event.key.keysym.sym == SDLK_d)
+	  key_down[3] = false;
+	break;
       }
     }
 
-    tick();
+    const unsigned curr_ticks = SDL_GetTicks();
+    const unsigned ticks_passed = curr_ticks - last_ticks;
+    last_ticks = curr_ticks;
+    const float t_delta = ticks_passed / 1000.0f;
+
+    tick(t_delta);
 
     render();
 
