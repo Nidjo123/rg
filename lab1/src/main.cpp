@@ -26,9 +26,20 @@ static const char *NAME = "RG -- B-Spline";
 static const int WIDTH = 800;
 static const int HEIGHT = 600;
 
-unsigned int VBO;
-unsigned int VAO;
-unsigned int EBO;
+unsigned int object_VBO, bspline_VBO;
+unsigned int object_VAO, bspline_VAO;
+unsigned int object_EBO;
+
+Shader shader;
+Shader bspline_shader;
+
+glm::mat4 view;
+glm::mat4 projection;
+glm::mat4 MVP;
+
+const int samples_per_segment = 10;
+BSpline bspline("points");
+std::vector<float> bspline_samples(bspline.segments() * samples_per_segment * 3);
 
 void print_debug_info() {
   SDL_version compiled;
@@ -47,13 +58,52 @@ void print_debug_info() {
   SDL_Log("RAM: %d MB\n", SDL_GetSystemRAM());
 }
 
+void init() {
+  glViewport(0, 0, WIDTH, HEIGHT);
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_CULL_FACE);
+
+  glCullFace(GL_FRONT);
+
+  glGenVertexArrays(1, &object_VAO);
+  glGenVertexArrays(1, &bspline_VAO);
+
+  glGenBuffers(1, &object_VBO);
+  glGenBuffers(1, &object_EBO);
+  glGenBuffers(1, &bspline_VBO);
+
+  shader.load("shader.vert", "shader.frag");
+  bspline_shader.load("bspline.vert", "bspline.frag");
+}
+
 void render() {
   glClearColor(0.3f, 0.3f, 0.7f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+  // render BSpline by sampling over every segment
+  GLint locationID = glGetUniformLocation(bspline_shader.id, "MVP");
+
+  bspline_shader.use();
+  glBindVertexArray(bspline_VAO);
+  glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
+  glDrawArrays(GL_LINE_STRIP, 0, bspline_samples.size());
+  glBindVertexArray(0);
 }
 
 void tick() {
-
+  int i = 0;
+  for (int seg = 0; seg < bspline.segments(); seg++) {
+    const float delta = 1.0f / samples_per_segment;
+    float t = 0.0f;
+    for (int samp = 0; samp < samples_per_segment; samp++) {
+      glm::vec3 val = bspline.value(seg, t);
+      bspline_samples[i] = val[0];
+      bspline_samples[i+1] = val[1];
+      bspline_samples[i+2] = val[2];
+      i += 3;
+      t += delta;
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {
@@ -61,9 +111,8 @@ int main(int argc, char *argv[]) {
     std::cerr << "Must pass path to obj as argument!" << std::endl;
     exit(1);
   }
-  Object obj(argv[1]);
 
-  BSpline bspline("points");
+  Object obj(argv[1]);
 
   for (float t = 0.0f; t <= 1.0f; t += 0.1f) {
     glm::vec3 v = bspline.value(0, t);
@@ -120,34 +169,14 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl;
   }
 
-  float vertices[] = {
-     0.5f,  0.5f, 0.0f,  // top right
-     0.5f, -0.5f, 0.0f,  // bottom right
-    -0.5f, -0.5f, 0.0f,  // bottom left
-    -0.5f,  0.5f, 0.0f   // top left
-  };
-  unsigned int indices2[] = {  // note that we start from 0!
-			     0, 1, 3,   // first triangle
-			     1, 2, 3    // second triangle
-  };
+  init();
 
-  Shader shader("shader.vert", "shader.frag");
-  glViewport(0, 0, WIDTH, HEIGHT);
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-
-  glCullFace(GL_FRONT);
-
-  glGenVertexArrays(1, &VAO);
-  glGenBuffers(1, &VBO);
-  glGenBuffers(1, &EBO);
-
-  glBindVertexArray(VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, VBO);
+  glBindVertexArray(object_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, object_VBO);
   glBufferData(GL_ARRAY_BUFFER, sizeof(obj.attrib.vertices[0])*obj.attrib.vertices.size(), &obj.attrib.vertices[0], GL_STATIC_DRAW);
   //glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object_EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
   //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
 
@@ -155,12 +184,21 @@ int main(int argc, char *argv[]) {
   glEnableVertexAttribArray(0);
   glBindVertexArray(0);
 
-  glm::mat4 view;
-  glm::mat4 projection;
-  projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
-  glm::mat4 model = glm::scale(glm::vec3(4.0f, 4.0f, 4.0f));
+  // setup BSpline VAO
 
-  glm::mat4 MVP;
+  tick();
+
+  glBindVertexArray(bspline_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, bspline_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bspline_samples.size(), &bspline_samples[0], GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glBindVertexArray(0);
+
+
+  projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
+  glm::mat4 model = glm::scale(glm::vec3(.5f, .5f, .5f));
 
   GLint locationID = glGetUniformLocation(shader.id, "MVP");
 
@@ -183,27 +221,27 @@ int main(int argc, char *argv[]) {
 
     const unsigned period = 300000;
     unsigned ticks = SDL_GetTicks() % period;
-    view = glm::lookAt(glm::vec3(3.f, 3.f, 3.f),//glm::vec3(std::sin(ticks/(float)period*4*3.14f)*5.f, std::cos(ticks/(float)period*4*3.14f), 15.0f),
+    view = glm::lookAt(glm::vec3(0.f, 0.f, 30.f),
 		       glm::vec3(0.0f, 0.0f, 0.0f),
 		       glm::vec3(0.0f, 1.0f, 0.0f));
-    MVP = projection * view * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.f, 1.f, 0.f)) * model;
+    MVP = projection * view;// * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.0f, 1.0f, 0.0f));
 
     GLenum err;
-    while((err = glGetError()) != GL_NO_ERROR)
-      {
-	printf("OpenGL Error: %x\n", err);
-      }
+    while((err = glGetError()) != GL_NO_ERROR) {
+      printf("OpenGL Error: %x\n", err);
+    }
 
     render();
+    /*
     shader.use();
     glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
-    glBindVertexArray(VAO);
+    glBindVertexArray(object_VAO);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
+    glBindVertexArray(0);*/
 
     SDL_GL_SwapWindow(window);
 
-    //SDL_Delay(1);
+    SDL_Delay(1);
   }
 
   SDL_GL_DeleteContext(gl_context);

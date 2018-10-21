@@ -12,7 +12,10 @@
 
 class Shader {
 public:
+  Shader() = default;
   Shader(const char* vertexPath, const char* fragmentPath);
+
+  void load(const char* vertexPath, const char* fragmentPath);
 
   void use() const;
 

@@ -3,39 +3,7 @@
 #define INFO_LOG_SIZE 512
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
-  std::string vertexCode;
-  std::string fragmentCode;
-  std::ifstream vShaderFile;
-  std::ifstream fShaderFile;
-
-  vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-  fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-  try {
-    vShaderFile.open(vertexPath);
-    fShaderFile.open(fragmentPath);
-    std::stringstream vShaderStream, fShaderStream;
-
-    vShaderStream << vShaderFile.rdbuf();
-    fShaderStream << fShaderFile.rdbuf();
-
-    vShaderFile.close();
-    fShaderFile.close();
-
-    vertexCode = vShaderStream.str();
-    fragmentCode = fShaderStream.str();
-  } catch (std::ifstream::failure e) {
-    std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
-  }
-
-  const char *vShaderCode = vertexCode.c_str();
-  const char *fShaderCode = fragmentCode.c_str();
-
-  unsigned int vertex, fragment;
-  vertex = compileShader(vShaderCode, GL_VERTEX_SHADER);
-  fragment = compileShader(fShaderCode, GL_FRAGMENT_SHADER);
-
-  linkProgram(vertex, fragment);
+  load(vertexPath, fragmentPath);
 }
 
 unsigned int Shader::compileShader(const char *source, GLenum shader_type) {
@@ -84,6 +52,42 @@ void Shader::linkProgram(unsigned vertex, unsigned fragment) {
   glDeleteShader(fragment);
 
   std::cout << "Successfully loaded shaders!" << std::endl;
+}
+
+void Shader::load(const char* vertexPath, const char* fragmentPath) {
+  std::string vertexCode;
+  std::string fragmentCode;
+  std::ifstream vShaderFile;
+  std::ifstream fShaderFile;
+
+  vShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+  fShaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
+  try {
+    vShaderFile.open(vertexPath);
+    fShaderFile.open(fragmentPath);
+    std::stringstream vShaderStream, fShaderStream;
+
+    vShaderStream << vShaderFile.rdbuf();
+    fShaderStream << fShaderFile.rdbuf();
+
+    vShaderFile.close();
+    fShaderFile.close();
+
+    vertexCode = vShaderStream.str();
+    fragmentCode = fShaderStream.str();
+  } catch (std::ifstream::failure e) {
+    std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
+  }
+
+  const char *vShaderCode = vertexCode.c_str();
+  const char *fShaderCode = fragmentCode.c_str();
+
+  unsigned int vertex, fragment;
+  vertex = compileShader(vShaderCode, GL_VERTEX_SHADER);
+  fragment = compileShader(fShaderCode, GL_FRAGMENT_SHADER);
+
+  linkProgram(vertex, fragment);
 }
 
 void Shader::use() const {

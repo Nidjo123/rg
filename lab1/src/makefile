@@ -1,5 +1,5 @@
 
-GXX=g++
+GXX=g++ -g
 SDL2_CFLAGS=`sdl2-config --cflags`
 SDL2_LIBS=`sdl2-config --libs`
 GL_LIBS=-lGL -lGLU
@@ -15,7 +15,7 @@ bspline: main.o Shader.o Object.o BSpline.o glad.o
 	$(GXX) -o bspline main.o Shader.o Object.o BSpline.o glad.o $(LDFLAGS)
 
 main.o: main.cpp tiny_obj_loader.h Shader.h Object.h BSpline.h glad.o
-	$(GXX) $(GLAD) $(CFLAGS) -c main.cpp
+	$(GXX) $(GLAD) $(CFLAGS) -c -g main.cpp
 
 Shader.o: Shader.cpp Shader.h glad.o
 	$(GXX) $(GLAD) -c Shader.cpp
