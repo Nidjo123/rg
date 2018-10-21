@@ -6,7 +6,10 @@
 
 class Object {
 public:
+  Object() = default;
   Object(const char *path, const char *base_path = nullptr);
+
+  void load(const char *path, const char *base_path = nullptr);
 
   void printInfo() const;
 

@@ -41,6 +41,8 @@ const int samples_per_segment = 10;
 BSpline bspline("points");
 std::vector<float> bspline_samples(bspline.segments() * samples_per_segment * 3);
 
+Object obj;
+
 void print_debug_info() {
   SDL_version compiled;
   SDL_version linked;
@@ -154,7 +156,7 @@ int main(int argc, char *argv[]) {
   SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
 
-  Object obj(argv[1]);
+  obj.load(argv[1]);
   std::vector<unsigned> indices;
 
   for (const auto& shape : obj.shapes) {
