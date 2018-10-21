@@ -33,21 +33,21 @@ unsigned int object_EBO;
 Shader shader;
 Shader bspline_shader;
 
-glm::mat4 view = glm::lookAt(glm::vec3(0.f, 5.f, -15.f),
+glm::mat4 view = glm::lookAt(glm::vec3(-7.f, 7.f, -10.f),
 			     glm::vec3(5.0f, 5.0f, 30.0f),
 			     glm::vec3(0.0f, 1.0f, 0.0f));
 glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f, 100.0f);
 glm::mat4 model;
 glm::mat4 MVP;
 
-const int samples_per_segment = 20;
+const int samples_per_segment = 30;
 BSpline bspline("points");
 std::vector<float> bspline_samples(bspline.segments() * samples_per_segment * 3);
 
 Object obj;
 std::vector<unsigned> indices;
 
-const int duration = 10; // ticks
+const int duration = 20; // ticks
 
 void print_debug_info() {
   SDL_version compiled;
@@ -128,7 +128,7 @@ void tick() {
   float dy = bspline_samples[curr_pt*3+1];
   float dz = bspline_samples[curr_pt*3+2];
 
-  model = glm::translate(glm::vec3(dx, dy, dz));
+  model = glm::scale(glm::translate(glm::vec3(dx, dy, dz)), glm::vec3(10.f, 10.f, 10.f));
 
   MVP = projection * view * model;
 }
