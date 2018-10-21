@@ -27,6 +27,7 @@ static const int WIDTH = 800;
 static const int HEIGHT = 600;
 
 bool key_down[4];
+bool mouse_captured;
 float xoffset;
 float yoffset;
 float cam_yaw = 60.0f;
@@ -267,24 +268,26 @@ void tick(float t_delta) {
   if (key_down[3]) // D
     cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-  // process mousemotion
-  const float sensitivity = 0.5f;
-  xoffset *= sensitivity;
-  yoffset *= sensitivity;
+  if (mouse_captured) {
+    // process mousemotion
+    const float sensitivity = 10.0f * t_delta;
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
 
-  cam_yaw += xoffset;
-  cam_pitch -= yoffset;
+    cam_yaw += xoffset;
+    cam_pitch -= yoffset;
 
-  if (cam_pitch > 89.0f)
-    cam_pitch = 89.0f;
-  if (cam_pitch < -89.0f)
-    cam_pitch = -89.0f;
+    if (cam_pitch > 89.0f)
+      cam_pitch = 89.0f;
+    if (cam_pitch < -89.0f)
+      cam_pitch = -89.0f;
 
-  glm::vec3 front;
-  front.x = std::cos(glm::radians(cam_pitch)) * std::cos(glm::radians(cam_yaw));
-  front.y = std::sin(glm::radians(cam_pitch));
-  front.z = std::cos(glm::radians(cam_pitch)) * std::sin(glm::radians(cam_yaw));
-  cameraFront = glm::normalize(front);
+    glm::vec3 front;
+    front.x = std::cos(glm::radians(cam_pitch)) * std::cos(glm::radians(cam_yaw));
+    front.y = std::sin(glm::radians(cam_pitch));
+    front.z = std::cos(glm::radians(cam_pitch)) * std::sin(glm::radians(cam_yaw));
+    cameraFront = glm::normalize(front);
+  }
 
   view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
@@ -369,6 +372,8 @@ int main(int argc, char *argv[]) {
 	  key_down[1] = true;
 	if (event.key.keysym.sym == SDLK_d)
 	  key_down[3] = true;
+	if (event.key.keysym.sym == SDLK_c)
+	  mouse_captured = !mouse_captured;
 	if (event.key.keysym.sym == SDLK_ESCAPE)
 	  SDL_CaptureMouse(SDL_FALSE);
 	break;
