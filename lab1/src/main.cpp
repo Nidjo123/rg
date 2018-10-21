@@ -26,8 +26,8 @@ static const char *NAME = "RG -- B-Spline";
 static const int WIDTH = 800;
 static const int HEIGHT = 600;
 
-unsigned int object_VBO, bspline_VBO;
-unsigned int object_VAO, bspline_VAO;
+unsigned int object_VBO, bspline_VBO, tangent_VBO;
+unsigned int object_VAO, bspline_VAO, tangent_VAO;
 unsigned int object_EBO;
 
 Shader shader;
@@ -40,9 +40,12 @@ glm::mat4 projection = glm::perspective(glm::radians(45.0f), 800.f / 600.f, 0.1f
 glm::mat4 model;
 glm::mat4 MVP;
 
-const int samples_per_segment = 30;
+const int samples_per_segment = 60;
 BSpline bspline("points");
 std::vector<float> bspline_samples(bspline.segments() * samples_per_segment * 3);
+std::vector<float> bspline_tangents(bspline.segments() * samples_per_segment * 3);
+
+std::vector<float> tangent(6); // two 3D points
 
 Object obj;
 std::vector<unsigned> indices;
@@ -75,10 +78,12 @@ void init() {
 
   glGenVertexArrays(1, &object_VAO);
   glGenVertexArrays(1, &bspline_VAO);
+  glGenVertexArrays(1, &tangent_VAO);
 
   glGenBuffers(1, &object_VBO);
   glGenBuffers(1, &object_EBO);
   glGenBuffers(1, &bspline_VBO);
+  glGenBuffers(1, &tangent_VBO);
 
   shader.load("shader.vert", "shader.frag");
   bspline_shader.load("bspline.vert", "bspline.frag");
@@ -88,23 +93,60 @@ void init() {
     const float delta = 1.0f / samples_per_segment;
     float t = 0.0f;
     for (int samp = 0; samp < samples_per_segment; samp++) {
-      glm::vec3 val = bspline.value(seg, t);
-      bspline_samples[i] = val[0];
-      bspline_samples[i+1] = val[1];
-      bspline_samples[i+2] = val[2];
+      glm::vec3 value = bspline.value(seg, t);
+      bspline_samples[i] = value[0];
+      bspline_samples[i+1] = value[1];
+      bspline_samples[i+2] = value[2];
+      glm::vec3 tangent = bspline.tangent(seg, t);
+      bspline_tangents[i] = tangent[0];
+      bspline_tangents[i+1] = tangent[1];
+      bspline_tangents[i+2] = tangent[2];
+
       i += 3;
       t += delta;
     }
   }
+
+  glBindVertexArray(object_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, object_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(obj.attrib.vertices[0])*obj.attrib.vertices.size(), &obj.attrib.vertices[0], GL_STATIC_DRAW);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object_EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  // setup BSpline VAO
+  glBindVertexArray(bspline_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, bspline_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bspline_samples.size(), &bspline_samples[0], GL_STATIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
+
+  // setup tangent VAO
+  glBindVertexArray(tangent_VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, tangent_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tangent.size(), &tangent[0], GL_DYNAMIC_DRAW);
+
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindVertexArray(0);
 }
 
 void render() {
   glClearColor(0.3f, 0.3f, 0.7f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-  // render BSpline by sampling over every segment
-  const GLint locationID = glGetUniformLocation(bspline_shader.id, "MVP");
-  const GLint bspline_MVP = glGetUniformLocation(shader.id, "MVP");
+  const GLint locationID = glGetUniformLocation(shader.id, "MVP");
+  const GLint bspline_MVP = glGetUniformLocation(bspline_shader.id, "MVP");
+  const GLint bspline_col = glGetUniformLocation(bspline_shader.id, "color");
 
   shader.use();
   glUniformMatrix4fv(locationID, 1, GL_FALSE, glm::value_ptr(MVP));
@@ -116,14 +158,29 @@ void render() {
   bspline_shader.use();
   glBindVertexArray(bspline_VAO);
   glUniformMatrix4fv(bspline_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
+  glUniform3f(bspline_col, 0.0f, 1.0f, 0.0f);
   glDrawArrays(GL_LINE_STRIP, 0, bspline_samples.size() / 3);
   glBindVertexArray(0);
+
+  // draw tangent
+  bspline_shader.use();
+  glBindVertexArray(tangent_VAO);
+  glUniformMatrix4fv(bspline_MVP, 1, GL_FALSE, glm::value_ptr(MVP));
+  glUniform3f(bspline_col, 1.0f, 0.0f, 0.0f);
+  glBindBuffer(GL_ARRAY_BUFFER, tangent_VBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * tangent.size(), &tangent[0], GL_DYNAMIC_DRAW);
+  glDrawArrays(GL_LINES, 0, tangent.size() / 3);
+  glBindVertexArray(0);
+
+  GLenum err;
+  while((err = glGetError()) != GL_NO_ERROR) {
+    printf("OpenGL Error: %x\n", err);
+  }
 }
 
 void tick() {
   // calculate object position on the spline
   const int curr_pt = SDL_GetTicks() / duration % (bspline_samples.size()/3);
-  std::cout << curr_pt << std::endl;
   float dx = bspline_samples[curr_pt*3];
   float dy = bspline_samples[curr_pt*3+1];
   float dz = bspline_samples[curr_pt*3+2];
@@ -131,6 +188,17 @@ void tick() {
   model = glm::scale(glm::translate(glm::vec3(dx, dy, dz)), glm::vec3(10.f, 10.f, 10.f));
 
   MVP = projection * view * model;
+
+  const glm::vec3 tang(bspline_tangents[curr_pt*3],
+		       bspline_tangents[curr_pt*3+1],
+		       bspline_tangents[curr_pt*3+2]);
+  const float scale = 10.0f;
+  tangent[0] = dx;
+  tangent[1] = dy;
+  tangent[2] = dz;
+  tangent[3] = dx + scale*tang[0];
+  tangent[4] = dy + scale*tang[1];
+  tangent[5] = dz + scale*tang[2];
 }
 
 int main(int argc, char *argv[]) {
@@ -191,32 +259,6 @@ int main(int argc, char *argv[]) {
 
   init();
 
-  glBindVertexArray(object_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, object_VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(obj.attrib.vertices[0])*obj.attrib.vertices.size(), &obj.attrib.vertices[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object_EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  glBindVertexArray(0);
-
-  // setup BSpline VAO
-  glBindVertexArray(bspline_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, bspline_VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * bspline_samples.size(), &bspline_samples[0], GL_STATIC_DRAW);
-
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(0);
-  glBindVertexArray(0);
-
-  int cnt = 0;
-  for (auto x : bspline_samples) {
-    std::cout << x << " ";
-    if ((++cnt) % 3 == 0) std::cout << std::endl;
-  }
-
   int running = 1;
   while (running) {
     SDL_Event event;
@@ -233,16 +275,6 @@ int main(int argc, char *argv[]) {
     }
 
     tick();
-
-    const unsigned period = 300000;
-    unsigned ticks = SDL_GetTicks() % period;
-
-    //MVP = projection * view * glm::rotate(ticks/(float)period*360.f, glm::vec3(0.0f, 1.0f, 0.0f));
-
-    GLenum err;
-    while((err = glGetError()) != GL_NO_ERROR) {
-      printf("OpenGL Error: %x\n", err);
-    }
 
     render();
 

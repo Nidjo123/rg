@@ -81,5 +81,5 @@ glm::vec3 BSpline::tangent(int segment, float t) const {
 
   glm::mat3x4 R = makeR(segment);
 
-  return 0.5f * T2 * B3 * R;
+  return glm::normalize(0.5f * T2 * B3 * R);
 }
