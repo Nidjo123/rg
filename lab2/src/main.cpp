@@ -22,6 +22,7 @@
 #include "Camera.h"
 #include "Object.h"
 #include "Particle.h"
+#include "ParticleGenerator.h"
 
 #define DEBUG 1
 
@@ -40,12 +41,7 @@ unsigned int object_VBO;
 unsigned int object_VAO;
 unsigned int object_EBO;
 
-unsigned int snow_VBO;
-unsigned int snow_VAO;
-unsigned int snow_EBO;
-
 Shader shader;
-Shader snowflake_shader;
 
 glm::mat4 model;
 glm::mat4 MVP;
@@ -57,7 +53,7 @@ std::vector<float> obj_data;
 
 unsigned int texture;
 
-Snowflake snowflake;
+SnowGenerator snow_generator;
 
 void print_debug_info() {
   SDL_version compiled;
@@ -114,16 +110,13 @@ void init() {
   glGenBuffers(1, &object_VBO);
   glGenBuffers(1, &object_EBO);
 
-  glGenVertexArrays(1, &snow_VAO);
-  glGenBuffers(1, &snow_VBO);
-  glGenBuffers(1, &snow_EBO);
-
   shader.load("shader.vert", "shader.frag");
-  snowflake_shader.load("snowflake.vert", "snowflake.frag");
 
   // load snowflake texture
   generate_texture("snow.bmp", &texture);
   Snowflake::texture = texture;
+
+  snow_generator.setup_rendering();
 
   // camera
   camera.view = glm::lookAt(glm::vec3(-7.f, 15.f, -10.f),
@@ -184,23 +177,6 @@ void init() {
   glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(6 * sizeof(float)));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindVertexArray(0);
-
-  // snowflake
-  glBindVertexArray(snow_VAO);
-  glBindBuffer(GL_ARRAY_BUFFER, object_VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(obj_data[0])*obj_data.size(), &obj_data[0], GL_STATIC_DRAW);
-
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, object_EBO);
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned) * indices.size(), &indices[0], GL_STATIC_DRAW);
-
-  glEnableVertexAttribArray(0);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(3 * sizeof(float)));
-  glEnableVertexAttribArray(2);
-  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(6 * sizeof(float)));
-  glBindBuffer(GL_ARRAY_BUFFER, 0);
-  glBindVertexArray(0);
 }
 
 void render() {
@@ -217,7 +193,7 @@ void render() {
   glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 
-  snowflake.render(camera);
+  snow_generator.render(camera);
 
   // check for OpenGL errors
   GLenum err;
@@ -230,33 +206,23 @@ void cleanup() {
 }
 
 void tick(float t_delta) {
-  /*
-  const glm::vec3 orientation = glm::vec3(0.0f, 0.0f, 1.0f);
-  const glm::vec3 rot_axis = glm::cross(orientation, tang);
-  const float cos_phi = glm::dot(tang, orientation);
-  const float angle = std::acos(cos_phi);// / M_PI * 180.0f;
-  const glm::mat4 rot = glm::rotate(angle, rot_axis); // documentation is wrong, it's radians, not degrees!!!
-  */
-  const glm::mat4 scale_ = glm::scale(glm::vec3(10.f, 10.f, 10.f));
-  //const glm::mat4 translate = glm::translate(glm::vec3(dx, dy, dz));
-
-  model = scale_; //translate * rot * scale_;
 
   // process keyboard
   camera.update_position(t_delta, key_down);
 
-  if (!mouse_captured) {
-    xoffset = 0.0f;
-    yoffset = 0.0f;
+  if (mouse_captured) {
+    camera.update_orientation(t_delta, xoffset, yoffset);
   }
 
-  camera.update_orientation(t_delta, xoffset, yoffset);
+  model = glm::scale(glm::vec3(5, 5, 5));
 
   const glm::mat4 view = camera.get_view();
   const glm::mat4 projection = camera.get_projection();
 
   MVP =  projection * view * model;
   MV = view * model;
+
+  snow_generator.tick(t_delta);
 }
 
 int main(int argc, char *argv[]) {
@@ -316,6 +282,7 @@ int main(int argc, char *argv[]) {
 
   int running = 1;
   while (running) {
+    bool was_motion = false;
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
       switch (event.type) {
@@ -351,10 +318,16 @@ int main(int argc, char *argv[]) {
 	  key_down[3] = false;
 	break;
       case SDL_MOUSEMOTION:
+	was_motion = true;
 	xoffset = event.motion.xrel;
 	yoffset = event.motion.yrel;
 	break;
       }
+    }
+
+    if (!was_motion) {
+      xoffset = 0;
+      yoffset = 0;
     }
 
     const unsigned curr_ticks = SDL_GetTicks();

@@ -9,7 +9,7 @@ public:
 
   void update_position(float delta, bool keys[4]);
   void update_orientation(float delta, float xoffset, float yoffset);
-  glm::mat4 get_view();
+  glm::mat4 get_view() const;
   glm::mat4 get_projection() const;
 
   glm::vec3 pos;
@@ -22,6 +22,9 @@ public:
 
   glm::mat4 view;
   glm::mat4 projection;
+
+private:
+  void update_view();
 };
 
 #endif // CAMERA_H

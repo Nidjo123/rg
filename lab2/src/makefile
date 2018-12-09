@@ -11,8 +11,8 @@ GLAD=-I/home/nikola/Dev/faks/racunalna_grafika/lab1/include/
 
 all: particles
 
-particles: main.o Shader.o Object.o glad.o Camera.o Particle.o stb_image.o
-	$(GXX) -o particles main.o Shader.o Object.o Camera.o Particle.o glad.o stb_image.o $(LDFLAGS)
+particles: main.o Shader.o Object.o glad.o Camera.o Particle.o ParticleGenerator.o stb_image.o
+	$(GXX) -o particles main.o Shader.o Object.o Camera.o Particle.o ParticleGenerator.o glad.o stb_image.o $(LDFLAGS)
 
 main.o: main.cpp tiny_obj_loader.h Shader.h Object.h Camera.h Particle.o glad.o
 	$(GXX) $(GLAD) $(CFLAGS) -c main.cpp
@@ -26,7 +26,10 @@ Object.o: glad.o tiny_obj_loader.h Object.h Object.cpp
 Camera.o: Camera.h Camera.cpp
 	$(GXX) -c Camera.cpp
 
-Particle.o: Particle.h
+ParticleGenerator.o: ParticleGenerator.cpp ParticleGenerator.h Particle.h Particle.o glad.o
+	$(GXX) $(GLAD) -c ParticleGenerator.cpp
+
+Particle.o: Particle.h Particle.cpp
 	$(GXX) -c Particle.cpp
 
 glad.o: glad.c

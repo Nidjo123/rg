@@ -16,6 +16,8 @@ void Camera::update_position(float delta, bool key_down[4]) {
     pos -= glm::normalize(glm::cross(front, up)) * cameraSpeed;
   if (key_down[3]) // D
     pos += glm::normalize(glm::cross(front, up)) * cameraSpeed;
+
+  update_view();
 }
 
 void Camera::update_orientation(float delta, float xoffset, float yoffset) {
@@ -30,9 +32,19 @@ void Camera::update_orientation(float delta, float xoffset, float yoffset) {
     pitch = 89.0f;
   if (pitch < -89.0f)
     pitch = -89.0f;
+
+  update_view();
 }
 
-glm::mat4 Camera::get_view() {
+glm::mat4 Camera::get_view() const {
+  return view;
+}
+
+glm::mat4 Camera::get_projection() const {
+  return projection;
+}
+
+void Camera::update_view() {
   glm::vec3 camFront;
   camFront.x = std::cos(glm::radians(pitch)) * std::cos(glm::radians(yaw));
   camFront.y = std::sin(glm::radians(pitch));
@@ -40,10 +52,4 @@ glm::mat4 Camera::get_view() {
   front = glm::normalize(camFront);
 
   view = glm::lookAt(pos, pos + front, up);
-
-  return view;
-}
-
-glm::mat4 Camera::get_projection() const {
-  return projection;
 }

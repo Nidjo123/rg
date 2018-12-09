@@ -14,20 +14,29 @@ class Particle {
 
   virtual void render(const Camera &camera) = 0;
 
- private:
+  virtual void reset(glm::vec3 pos);
+
   glm::vec3 pos;
   glm::vec3 speed;
+  bool alive;
 };
 
 class Snowflake : public Particle {
  public:
-  virtual void render(const Camera &camera);
+  Snowflake();
+  Snowflake(glm::vec3 pos);
+
+  virtual void render(const Camera &camera) override;
+
+  virtual void reset(glm::vec3 pos);
 
   static unsigned texture;
 
- private:
+  // private:
   // quad
   static const float *vertices;
+
+  float scale;
 };
 
 #endif // PARTICLE_H
