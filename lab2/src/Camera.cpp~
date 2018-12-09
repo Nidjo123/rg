@@ -1,0 +1,13 @@
+#include "Camera.h"
+
+void Camera::update_position(float delta, bool key_down[4]) {
+  const float cameraSpeed = speed * t_delta;
+  if (key_down[0]) // W
+    cameraPos += cameraSpeed * cameraFront;
+  if (key_down[2]) // S
+    cameraPos -= cameraSpeed * cameraFront;
+  if (key_down[1]) // A
+    cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+  if (key_down[3]) // D
+    cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+}

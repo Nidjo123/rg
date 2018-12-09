@@ -1,0 +1,22 @@
+#include "Object.h"
+
+Object::Object(const char *path, const char *base_path) {
+  std::string err;
+  std::string warn;
+  bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "../obj/ArabianCity.obj", "../obj");
+
+  if (!warn.empty()) {
+    std::cout << warn << std::endl;
+  }
+
+  if (!err.empty()) { // `err` may contain warning message.
+    std::cerr << err << std::endl;
+  }
+
+  if (!ret) {
+    exit(1);
+  }
+
+  std::cout << "Successfully loaded " << inputfile << "!\n";
+
+}

@@ -1,0 +1,6 @@
+#include "Particle.h"
+
+Particle::Particle(glm::vec3 pos, glm::vec3 speed)
+  : pos(pos), speed(speed) {
+
+}
