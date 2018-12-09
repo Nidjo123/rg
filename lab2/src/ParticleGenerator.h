@@ -21,7 +21,6 @@ class ParticleGenerator {
   virtual void tick(float delta) = 0;
   virtual void render(const Camera &camera) = 0;
 
- protected:
   glm::vec3 pos;
 };
 
@@ -35,12 +34,20 @@ class SnowGenerator : public ParticleGenerator {
 
   void setup_rendering();
 
+  glm::vec3 speed;
+
  private:
   glm::vec3 generate_position() const;
 
-  unsigned int snow_VBO;
-  unsigned int snow_VAO;
-  unsigned int snow_EBO;
+  unsigned cloud_VAO;
+  unsigned cloud_VBO;
+  unsigned cloud_EBO;
+
+  Shader cloud_shader;
+
+  unsigned snow_VBO;
+  unsigned snow_VAO;
+  unsigned snow_EBO;
 
   Shader snowflake_shader;
 

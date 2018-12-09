@@ -54,6 +54,7 @@ std::vector<float> obj_data;
 unsigned int texture;
 
 SnowGenerator snow_generator;
+SnowGenerator snow_generator2;
 
 void print_debug_info() {
   SDL_version compiled;
@@ -117,6 +118,10 @@ void init() {
   Snowflake::texture = texture;
 
   snow_generator.setup_rendering();
+  snow_generator.speed = glm::vec3(0.f, 0.f, 2.f);
+
+  snow_generator2.setup_rendering();
+  snow_generator2.speed = glm::vec3(0.f, 0.f, -2.f);
 
   // camera
   camera.view = glm::lookAt(glm::vec3(-7.f, 15.f, -10.f),
@@ -180,7 +185,7 @@ void init() {
 }
 
 void render() {
-  glClearColor(0.3f, 0.3f, 0.7f, 1.0f);
+  glClearColor(0.1f, 0.1f, 0.35f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   const GLint obj_MVP = glGetUniformLocation(shader.id, "MVP");
@@ -194,6 +199,7 @@ void render() {
   glBindVertexArray(0);
 
   snow_generator.render(camera);
+  snow_generator2.render(camera);
 
   // check for OpenGL errors
   GLenum err;
@@ -206,7 +212,6 @@ void cleanup() {
 }
 
 void tick(float t_delta) {
-
   // process keyboard
   camera.update_position(t_delta, key_down);
 
@@ -223,6 +228,7 @@ void tick(float t_delta) {
   MV = view * model;
 
   snow_generator.tick(t_delta);
+  snow_generator2.tick(t_delta);
 }
 
 int main(int argc, char *argv[]) {
@@ -328,6 +334,12 @@ int main(int argc, char *argv[]) {
     if (!was_motion) {
       xoffset = 0;
       yoffset = 0;
+    }
+
+    if (mouse_captured) {
+      SDL_SetRelativeMouseMode(SDL_TRUE);
+    } else {
+      SDL_SetRelativeMouseMode(SDL_FALSE);
     }
 
     const unsigned curr_ticks = SDL_GetTicks();
