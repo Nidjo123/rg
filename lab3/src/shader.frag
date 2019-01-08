@@ -3,6 +3,7 @@
 // uniforms
 uniform vec2 iResolution;
 uniform float iTime;
+uniform vec2 iMouse;
 
 #define MAX_STEPS 128
 #define SURFACE_DIST 0.000001
@@ -47,8 +48,8 @@ vec3 getNormal(vec3 p)
 
 float getLight(vec3 p)
 {
-    vec3 lightPos = vec3(0, 5, 6);
-    //vec3 lightPos = vec3(iMouse.x/iResolution.x, 5.*iMouse.y/iResolution.y, 6);
+    //vec3 lightPos = vec3(0, 5, 6);
+    vec3 lightPos = vec3(iMouse.x/iResolution.x, 5.*(iResolution.y-iMouse.y)/iResolution.y, 6);
     vec3 l = normalize(lightPos-p);
     vec3 n = getNormal(p);
 

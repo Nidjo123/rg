@@ -39,6 +39,9 @@ Shader shader;
 glm::mat4 MVP;
 glm::vec2 iResolution(WIDTH, HEIGHT);
 
+int mouse_x;
+int mouse_y;
+
 float iTime;
 
 void print_debug_info() {
@@ -116,7 +119,7 @@ void init() {
   glBindVertexArray(0);
 
   // setup MVP
-  const glm::mat4 projection = glm::ortho(0.0, 1.0, 1.0, 0.0);
+  const glm::mat4 projection = glm::ortho(0.0f, 1.0f, 1.0f, 0.0f);
 
   MVP =  projection;
 }
@@ -128,6 +131,7 @@ void render() {
   const GLint MVP_location = glGetUniformLocation(shader.id, "MVP");
   const GLint iRes_location = glGetUniformLocation(shader.id, "iResolution");
   const GLint iTime_location = glGetUniformLocation(shader.id, "iTime");
+  const GLint iMouse_location = glGetUniformLocation(shader.id, "iMouse");
 
   shader.use();
 
@@ -135,6 +139,7 @@ void render() {
   glUniformMatrix4fv(MVP_location, 1, GL_FALSE, glm::value_ptr(MVP));
   glUniform2fv(iRes_location, 1, glm::value_ptr(iResolution));
   glUniform1f(iTime_location, iTime);
+  glUniform2f(iMouse_location, (float)mouse_x, (float)mouse_y);
 
   glBindVertexArray(quad_VAO);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
@@ -264,6 +269,8 @@ int main(int argc, char *argv[]) {
     const float t_delta = ticks_passed / 1000.0f;
 
     iTime = curr_ticks / 1000.0f;
+
+    SDL_GetMouseState(&mouse_x, &mouse_y);
 
     tick(t_delta);
 
