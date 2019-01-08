@@ -36,9 +36,10 @@ unsigned int quad_VAO;
 
 Shader shader;
 
-glm::mat4 model;
 glm::mat4 MVP;
-glm::mat4 MV;
+glm::vec2 iResolution(WIDTH, HEIGHT);
+
+float iTime;
 
 void print_debug_info() {
   SDL_version compiled;
@@ -125,9 +126,16 @@ void render() {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   const GLint MVP_location = glGetUniformLocation(shader.id, "MVP");
+  const GLint iRes_location = glGetUniformLocation(shader.id, "iResolution");
+  const GLint iTime_location = glGetUniformLocation(shader.id, "iTime");
 
   shader.use();
+
+  // send uniforms
   glUniformMatrix4fv(MVP_location, 1, GL_FALSE, glm::value_ptr(MVP));
+  glUniform2fv(iRes_location, 1, glm::value_ptr(iResolution));
+  glUniform1f(iTime_location, iTime);
+
   glBindVertexArray(quad_VAO);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
   glBindVertexArray(0);
@@ -254,6 +262,8 @@ int main(int argc, char *argv[]) {
     const unsigned ticks_passed = curr_ticks - last_ticks;
     last_ticks = curr_ticks;
     const float t_delta = ticks_passed / 1000.0f;
+
+    iTime = curr_ticks / 1000.0f;
 
     tick(t_delta);
 

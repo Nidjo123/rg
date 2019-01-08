@@ -2,8 +2,8 @@
 layout (location = 0) in vec3 aPos;
 
 uniform mat4 MVP;
-
-out vec3 v_Position;
+uniform vec2 iResolution;
+uniform float iTime;
 
 void main()
 {
