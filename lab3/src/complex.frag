@@ -115,5 +115,8 @@ void main()
 
     col = vec3(diffuse, diffuse, diffuse);
 
+    if (p.y > 0.01 && p.z < 9.99 && abs(p.x)<3.99)
+       col *= vec3(0.8, 0.5, 0.2);
+
     gl_FragColor = vec4(col, 1.);
 }
