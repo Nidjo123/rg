@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+#include <cstdlib>
+
 #define INFO_LOG_SIZE 512
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath) {
@@ -27,6 +29,8 @@ unsigned int Shader::compileShader(const char *source, GLenum shader_type) {
       std::cerr << "ERROR::UNKNOWN_SHADER_TYPE\n" << infoLog << std::endl;
       break;
     }
+
+    exit(1);
   }
 
   return shader;
