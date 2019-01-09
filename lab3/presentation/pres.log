@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018/Arch Linux) (preloaded format=pdflatex 2019.1.8)  9 JAN 2019 19:03
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2018/Arch Linux) (preloaded format=pdflatex 2019.1.8)  9 JAN 2019 19:33
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1039,45 +1039,57 @@ Overfull \vbox (21.60703pt too high) detected at line 72
 
 [7
 
-] [8
+]
+<raymarch.png, id=80, 860.21375pt x 495.8525pt>
+File: raymarch.png Graphic file (type png)
+<use raymarch.png>
+Package pdftex.def Info: raymarch.png  used on input line 79.
+(pdftex.def)             Requested size: 307.28781pt x 177.12973pt.
 
-] [9
+Overfull \vbox (12.5703pt too high) detected at line 79
+ []
+
+[8
+
+ <./raymarch.png>] [9
 
 ] [10
 
+] [11
+
 ]
-<rainforest.jpg, id=99, 481.8pt x 271.0125pt>
+<rainforest.jpg, id=108, 481.8pt x 271.0125pt>
 File: rainforest.jpg Graphic file (type jpg)
 <use rainforest.jpg>
-Package pdftex.def Info: rainforest.jpg  used on input line 122.
+Package pdftex.def Info: rainforest.jpg  used on input line 129.
 (pdftex.def)             Requested size: 307.29965pt x 172.85605pt.
 
-Overfull \vbox (24.97153pt too high) detected at line 122
+Overfull \vbox (24.97153pt too high) detected at line 129
  []
 
-[11
+[12
 
  <./rainforest.jpg>]
-<sponge.jpg, id=106, 481.8pt x 271.0125pt>
+<sponge.jpg, id=114, 481.8pt x 271.0125pt>
 File: sponge.jpg Graphic file (type jpg)
 <use sponge.jpg>
-Package pdftex.def Info: sponge.jpg  used on input line 130.
+Package pdftex.def Info: sponge.jpg  used on input line 137.
 (pdftex.def)             Requested size: 307.29965pt x 172.85605pt.
 
-Overfull \hbox (77.06592pt too wide) in paragraph at lines 130--130
+Overfull \hbox (77.06592pt too wide) in paragraph at lines 137--137
 \T1/cmss/m/sc/12 tps://www.iquilezles.org/www/articles/raymarchingdf/raymarchin
 gdf.htm[]Íñigo 
  []
 
 
-Overfull \vbox (79.63257pt too high) detected at line 130
+Overfull \vbox (79.63257pt too high) detected at line 137
  []
 
-[12
+[13
 
- <./sponge.jpg>] [13
+ <./sponge.jpg>] [14
 
-] [14
+] [15
 
 ]
 \tf@nav=\write6
@@ -1089,11 +1101,11 @@ Overfull \vbox (79.63257pt too high) detected at line 130
 \tf@snm=\write8
 \openout8 = `pres.snm'.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 149.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 149.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 156.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 156.
  (./pres.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 149.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 149.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 156.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 156.
 Package rerunfilecheck Info: File `pres.out' has not changed.
 (rerunfilecheck)             Checksum: ED6800E011ADB1D15C6006F273C54AED;138.
 
@@ -1102,10 +1114,10 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 21660 strings out of 492639
- 420144 string characters out of 6135498
+ 21670 strings out of 492639
+ 420262 string characters out of 6135498
  506183 words of memory out of 5000000
- 25003 multiletter control sequences out of 15000+600000
+ 25009 multiletter control sequences out of 15000+600000
  21550 words of font info for 53 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  71i,13n,88p,1880b,696s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1122,10 +1134,10 @@ usr/share/texmf-dist/fonts/type1/public/cm-super/sfsx1440.pfb></usr/share/texmf
 -dist/fonts/type1/public/cm-super/sfsx1728.pfb></usr/share/texmf-dist/fonts/typ
 e1/public/cm-super/sftt1095.pfb></usr/share/texmf-dist/fonts/type1/public/cm-su
 per/sftt1200.pfb>
-Output written on pres.pdf (14 pages, 498794 bytes).
+Output written on pres.pdf (15 pages, 523269 bytes).
 PDF statistics:
- 185 PDF objects out of 1000 (max. 8388607)
- 145 compressed objects within 2 object streams
- 33 named destinations out of 1000 (max. 500000)
- 77 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 193 PDF objects out of 1000 (max. 8388607)
+ 150 compressed objects within 2 object streams
+ 35 named destinations out of 1000 (max. 500000)
+ 82 words of extra memory for PDF output out of 10000 (max. 10000000)
 
