@@ -98,8 +98,6 @@ void init() {
   glGenVertexArrays(1, &quad_VAO);
   glGenBuffers(1, &quad_VBO);
 
-  shader.load("shader.vert", "shader.frag");
-
   float quad_vertices[] = {
 		  -1.f, 1.f,
 		  1.f, 1.f,
@@ -160,6 +158,10 @@ void tick(float t_delta) {
 }
 
 int main(int argc, char *argv[]) {
+  if (argc != 2) {
+    std::cout << "Please pass fragment shader path as argument!" << std::endl;
+  }
+
   SDL_Window *window = NULL;
 
   SDL_SetMainReady();
@@ -204,8 +206,11 @@ int main(int argc, char *argv[]) {
   SDL_Log("Maximum nr of vertex attributes supported: %d\n", nrAttributes);
 
   init();
+  shader.load("shader.vert", argv[1]);
 
   unsigned last_ticks = 0u;
+  unsigned fps_ticks = 0u;
+  unsigned fps = 0u;
 
   int running = 1;
   while (running) {
@@ -268,6 +273,13 @@ int main(int argc, char *argv[]) {
     last_ticks = curr_ticks;
     const float t_delta = ticks_passed / 1000.0f;
 
+    fps_ticks += ticks_passed;
+
+    if (fps_ticks>1000) {
+      std::cout << "FPS: " << fps << std::endl;
+      fps_ticks = fps = 0u;
+    }
+
     iTime = curr_ticks / 1000.0f;
 
     SDL_GetMouseState(&mouse_x, &mouse_y);
@@ -275,10 +287,11 @@ int main(int argc, char *argv[]) {
     tick(t_delta);
 
     render();
+    fps++;
 
     SDL_GL_SwapWindow(window);
 
-    SDL_Delay(1);
+    //SDL_Delay(1);
   }
 
   cleanup();
