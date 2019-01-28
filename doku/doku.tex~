@@ -1,0 +1,131 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[croatian]{babel}
+\usepackage{verbatim}
+\usepackage{listings}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{gensymb}
+\usepackage{float}
+
+\author{Nikola~Bunjevac (0036485677)}
+\title{Dokumentacija iz predmeta Interaktivna računalna grafika\\{\normalsize Inačica B}}
+
+\begin{document}
+\maketitle
+
+\section{Prva laboratorijska vježba}
+
+Prva laboratorijska vježba sastoji se od tri dijela---implementacije vlastite
+matematičke biblioteke, pisanje prvog programa u OpenGL-u kako bismo upoznali
+osnovne pojmove same specifikacije te potporne biblioteke (u ovom slučaju freeglut\footnote{http://freeglut.sourceforge.net/}) te implementacija Bresenhamovog algoritma za crtanje pravaca na rasterskim jedinicama.
+
+U prvom dijelu prve laboratorijske vježbe trebalo je napisati vlastitu biblioteku za
+rad s matematičkim objektima od presudne važnosti u računalnoj grafici, a to su vektori i matrice. Vlastita biblioteka, kao i sve ostalo, je implementirana u programskom jeziku C++. Objektno-orijentirani jezici vrlo su pogodni za rad
+s računalnom grafikom jer omogućavaju elegantno definiranje i manipuliranje
+potrebnim pojmovima.
+
+Primjerice, vektori i matrice su predstavljeni posebnim
+razredima, i to hijerarhijski, kako bi se postigla što veća neovisnost i
+modularnost. Tako je vršni razred koji treba naslijediti svaki vektor {\verb|IVector|}, a svaka matrica {\verb|IMatrix|}. Zatim je potrebno implementirati
+razrede {\verb|AbstractVector|} i {\verb|AbstractMatrix|} koji koriste
+polimorfne pozive kako bi implementirali većinu funkcionalnosti, iako još
+``ne znaju'' gdje će, i kako, biti smješteni u memoriji. To je upravo prednost
+takve organizacije razreda. Naposlijetku, konkretni razredi {\verb|Vector|} i
+{\verb|Matrix|} određuju kako će se pohranjivati elementi vektora ili matrice.
+
+Korisno je naglasiti da, iako je ovakav dizajn vrlo elegantan i modularan, nije baš najprikladniji za programske jezike bez automatskog upravljanja memorijom (nasuprot, primjerice, Jave) pa je radi olakšanja korišten parametrizirani razred standardne biblioteke {\verb|shared_ptr<>|}.
+To dosta nepovoljno utječe na performansu, što je rezultat takve organizacije.
+
+Sada su dodane samo funkcionalnosti poput zbrajanja, oduzimanja i množenja vektora i matrica, skaliranja vektora, računanje kosinusa kuta između dvaju vektora, računanje inverza matrice, itd.
+U kasnijim vježbama ćemo biblioteku proširiti razredom {\verb|IRG|} sa
+statičkim metodama za stvaranje pojedinih korisnih matrica.
+
+U drugom dijelu laboratorijske vježbe trebalo je napisati aplikaciju koja
+za iscrtavanje koristi OpenGL te korisniku omogućava proizvoljno zadavanje
+i crtanje trokuta unutar prozora. Korisnik klikom zadaje vrhove trokuta i
+može proizvoljno mijenjati boju svakog od njih na jednu od prethodno zadanih.
+
+OpenGL se može shvatiti kao stroj stanja. Vrhove trokuta i pripadnu boju potrebno je pamtiti u nekoj vanjskoj strukturi, a pozivi OpenGL-u se koriste tek
+u trenutku iscrtavanja na ekran. Svako crtanje je strukturirano na sljedeći
+način:
+
+\begin{lstlisting}[language=C]
+  glBegin(GL_*);
+  // pozivi za slanje vrhova
+  glEnd();
+\end{lstlisting}
+U ovom slučaju, argument naredbe {\verb|glBegin|} bio je {\verb|GL_TRIANGLES|}, zato što crtamo upravo trokute. Između naredbi početka i kraja, pozivima
+{\verb|glVertex2f|} šaljemo 2D koordinate svakog pojedinog vrha trokuta. Kod crtanja trokuta na ovaj način, broj vrhova uvijek mora biti višekratnik broja 3, odnosno uvijek šaljemo $3n$ vrhova, gdje je
+$n \in \mathbb{N}$.
+Kako je OpenGL stroj stanja, boja koju postavimo u jednom trenutku će se koristiti skroz dok ne postavimo neku drugu boju. Postavljanje boje obavljamo pozivom
+{\verb|glColor3f|}, koji kao argumente prima 3 broja tipa {\verb|GLfloat|}, redom crvena, zelena i plava komponenta (RGB).
+
+U trećem dijelu vježbe bilo je potrebno implementirati Bresenhamov algoritam
+za crtanje pravaca te Cohen-Sutherlandov algoritam za odsijecanje. Svaki pravac u ravnini je zadan dvjema točkama $T_1(x_1, y_1)$ i $T_2(x_2, y_2)$ i možemo ga opisati jednadžbom:
+\[
+y - y_1 = \frac{y_2 - y_1}{x_2 - x_1}(x - x_1)
+\]
+Crtanje u ovom obliku je itekako moguće, ali pod cijenu loših performansi.
+Ideja Bresenhamovog algoritma je optimizirati postupak crtanja pravca, i to
+na više načina. Osnovna ideja je da se ne računa cijeli izraz u svakom koraku, već da se prati gomilanje pogreške (udaljenosti od sljedećeg piksela) te se nakon određene vrijednosti pomaknemo za jedan piksel u odgovarajućem smjeru i
+resetiramo pogrešku. Tako će pogreška uvijek biti mali broj.
+Nagib pravca možemo izračunati samo jednom i koristiti ga u svakom koraku.
+
+Druga ideja je raditi s cijelim brojevima umjesto s brojevima s pomičnim zarezom. Time se postiže veća brzina, te ne moramo paziti na numeričku stabilnost.
+
+Cohen-Sutherlandov algoritam služi za odsijecanje nevidljivih dijelova
+objekata koje crtamo. Primjerice, kod pravaca crtamo samo  segment koji je
+vidljiv na ekranu. Algoritam se temelji na ideji da cijelu površinu podijeli
+na dijelove i svakome pridružimo binarni kod koji opisuje prolazi li objekt
+tim dijelom. Nakon toga je, ovisno o binarnom kodu, potrebno korigirati
+granice objekta tako da se cijeli objekt nalazi u vidljivom području (kod 0000).
+
+\section{Druga laboratorijska vježba}
+
+Druga laboratorijska vježba sastojala se od dva dijela. U prvom dijelu trebalo je napisati OpenGL
+program za crtanje i popunjavanje poligona. Taj zadatak je jedan od najčešćih u računalnoj grafici
+te je često sklopovski podržan od grafičke kartice. Ipak, korisno je znati kako taj postupak obaviti
+``ručno''.
+
+Poligon je geometrijski lik koji se sastoji od $n$ vrhova i $n$ linijskih segmenata (bridova) koji ih povezuju. Najjednostavniji poligon je trokut, koji se vrlo često koristi za definiranje ostalih poligona.
+Trokut je relativno jednostavan, a svaki poligon s više od 3 vrha se može prikazati pomoću više
+trokuta. Primjerice, pravokutnik možemo podijeliti na dva trokuta. 3D modele možemo predstaviti
+pomoću mreže poligona, odnosno trokuta. Stoga je vrlo važno moći brzo i efikasno obrađivati te
+iscrtavati poligone, ili jednostavnije, trokute.
+
+Poligoni mogu biti konveksni ili konkavni. Odaberimo dvije proizvoljne točke $T_1$ i $T_2$ koje se
+nalaze unutar poligona. Poligon je konveksan ukoliko linija koja povezuje točke $T_1$ i $T_2$ ne siječe
+niti jednu stranicu poligona. U protivnom, poligon je konkavan. Stranice poligona možemo predstaviti već navedenom jednadžbom pravca.
+Još jedan zgodan način za zapamtiti pojam konkavnosti jest da u udubinu konkavnog poligona možemo uliti kavu.
+
+Drugo važno svojstvo poligona je smjer u kojemu su zadani njegovi vrhovi. To su dva moguća smjera---u smjeru kazaljke na satu
+(engl. {\sl clockwise}) i suprotno od smjera kazaljke na satu (engl. {\sl counter-clockwise}).
+Smjer zadavanja vrhova između ostalog određuje smjer normale ravnine u kojoj leži poligon te s koje
+strane bridova se nalaze ostalih vrhovi.
+
+Definirat ćemo pojam strane na koje se točka nalazi u odnosu na pravac. Neka je pravac zadan
+jednadžbom
+\[
+  y = ax + b
+\]
+gdje je $a$ nagib pravca. Uvrštavanjem točke $T(x, y)$ u jednadžbu pravca dobit ćemo broj koji
+može biti pozitivan, negativan ili 0. Ukoliko je rezultat pozitivan, točka se nalazi {\sl iznad}
+pravca, ako je rezultat negativan, točka se nalazi {\sl ispod} pravca, a ako je rezultat 0, točka
+leži na pravcu. Drugi način za shvaćanje je da zamislimo da se nalazimo na pravcu i gledamo u
+smjeru od početne do krajnje točke kojima je pravac zadan. S lijeve strane nam se nalaze sve točke
+koje su iznad pravca, s desne strane sve točke koje su ispod pravca, a točno ispred i iza nas se
+nalaze sve točke koje leže na pravcu.
+
+Sada ćemo opisati kako ispuniti konveksni poligon bojom. Postupak se temelji na principu skenirajuće linije
+(engl. {\sl scanline}). Potrebno je odrediti najmanji pravokutnik koji omeđuje poligon (engl. {\sl AABB, axis-aligned bounding box}). Uz pretpostavku ekranskog koordinatnog sustava, ideja je krenuti
+od najmanje $y$ koordinate poligona i ići redom po svim $y$ koordinata do najveće koja je obuhvaćena poligonom.
+Na svakoj $y$ koordinati potrebno je odrediti $x$ koordinate sjecišta pravca $y = b$ s bridom poligona.
+Nakon što smo odredili sjecišta, potrebno je nacrtati linijski segment koji spaja dva sjecišta.
+Kako smo pretpostavili da se radi o konveksnim poligonima, algoritam možemo i malo ubrzati na način
+da sortiramo bridove od vrha prema dnu te u svakom koraku razmatramo samo dva brida koji se nalaze
+na trenutnoj $y$ koordinati. Taj postupak je korišten u vlastitoj implementaciji. Prikaz
+poligona popunjenog navedenim algoritmom prikazan je na slici \ref{fig:polygon}.
+
+\end{document}
